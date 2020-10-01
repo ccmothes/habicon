@@ -1,0 +1,152 @@
+---
+output: github_document
+always_allow_html: true
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+# **habicon**
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+The goal of `habicon` is to calculate habitat patch and corridor priority in terms of their degree of importance to ecological connectivity. It is designed to integrate a habitat suitability data (e.g., outputs of species distribution models) and connectivity/corridor data (e.g., outputs from connectivity models such as CIRCUITSCAPE)
+
+
+You can install the development version of `habicon` on GitHub with:
+
+``` r
+devtools::install_github("ccmothes/habicon")
+```
+
+## Example
+
+This is a basic example using simulated habitat suitability and connectivity maps demonstrating the functions available so far. 
+
+**NOTE: This package is still in the early stages of development and more functions with increased user flexibility are coming soon!**
+
+```{r example, message=FALSE, warning=FALSE}
+library(habicon)
+```
+
+First let's visualize the simulated raster maps included as example data.
+
+These include **suit** where values represent habitat suitability and range from 0-1 (1 being high suitability):
+```{r suit}
+plot(suit)
+```
+ 
+And second **corr** where values represent conductance to movement and range from 0-10 (10 being high conductance/ease of movement):
+```{r corr}
+plot(corr)
+```
+
+## Prep Functions
+
+## Standardize input raster values using the `rescale_map` function
+
+As the corridor priority function is currently written, the values of both maps must range from 0-1. I've added a small function that does this to make the conversion easier for users, so let's use it to rescale the connectivity map:
+
+```{r rescale}
+corr_rescale <- rescale_map(corr)
+plot(corr_rescale)
+```
+See that the map still looks the same as before, but now the values range from 0-1.
+
+## Create binary maps to identify individual habitat patches and corridors using the `bin_map` function
+
+Other inputs needed for the priority calculations are binary maps, which can be created using the `bin_map` function. 
+
+Users can test and view binary maps over a range of values:
+```{r binmap}
+suit_bin <- bin_map(suit, threshold = c(0.4, 0.6, 0.8))
+plot(suit_bin)
+```
+
+Often species distribution models calculate potential threshold values that users can choose to use. Or, say you want to identify patches of the highest habitat suitability, say the top 20% of suitability values:
+```{r}
+suit_bin <- bin_map(suit, threshold = quantile(values(suit), 0.8))
+plot(suit_bin)
+```
+
+For this example, let's stick with the top 20% of suitability and conductance values to make the binary maps that identify the individual habitat patches and corridors.
+
+```{r}
+corr_bin <- bin_map(corr_rescale, threshold = quantile(values(corr_rescale), 0.8))
+plot(corr_bin)
+```
+
+## Filter out corridor cells that lie within identified habitat patches with `matrix map`
+
+Since we are only interested in corridors connecting patches and not those that may overlap with patches, your datasets may vary but you will likely need to filter out just the corridors that lie within the intervening matrix. You can create this matrix map with the function `matrix_map`. The resulting matrix map adds a 1 cell buffer around all identified matrix corridor cells, as this is necessary for the corridor priority function to identify all the habitat patches each corridor connects.
+```{r, warning=FALSE}
+corr_matrix <- matrix_map(suit_bin = suit_bin, corr_bin = corr_bin)
+```
+
+
+## Calculate corridor priority with the `corr_priority` function
+
+Now using our continuous and binary habitat and corridor surfaces, we can calculate corridor priority with the `corr_priority` function.
+NOTE: This function may take a while, as it performs many calculations on each individual cell. I am working on speeding up the run time.
+```{r eval=FALSE}
+corr_prior <- corr_priority(suit = suit, suit_bin = suit_bin, corr = corr_rescale, corr_bin = corr_matrix)
+```
+```{r message = FALSE}
+library(viridis)
+plot(corr_prior, col = inferno(n = 100), main = "Corridor Priority")
+```
+
+## Calculate patch priority with the `patch_priority` function
+`patch_priority` runs much faster than `corr_priority`. This function essentially ranks each individual patch based on its area and quality (suitability scores). Higher values indicate better patches. I am working on improving this calculation to include other metrics such as the role of each patch in the overall network of patches and corridors (e.g., centrality index).
+
+```{r}
+library(scales)
+patch_prior <- patch_priority(suit = suit, suit_bin = suit_bin)
+plot(patch_prior, col = gradient_n_pal(brewer_pal("seq")(9))(seq(0, 1, length=100)), 
+     main = "Patch Priority")
+```
+
+
+## Final Product:
+```{r echo = FALSE}
+
+plot(corr_prior, col = inferno(n = 100), legend = FALSE, axes = FALSE)
+plot(corr_prior, legend.only = TRUE, col = inferno(100), horizontal = TRUE,
+       smallplot = c(0.1,0.4,0.1,0.12),
+     legend.width = 0.25,
+     legend.shrink = 0.5,
+     axis.args = list(
+                      las = 2,
+                     
+                      cex.axis = 0.8,
+                      mgp = c(5,0.3,0)),
+     legend.args = list(text = "Corridor Priority", 
+                      side = 3, 
+                      font = 2, 
+                      line = 0.5, 
+                      cex = 1))
+plot(patch_prior, col = gradient_n_pal(brewer_pal("seq")(9))(seq(0, 1, length=100)), legend = FALSE, axes = FALSE, add = TRUE)
+plot(patch_prior, legend.only = TRUE, col = gradient_n_pal(brewer_pal("seq")(9))(seq(0, 1, length=100)), horizontal = TRUE, smallplot = c(0.5,0.8,0.1,0.12),
+     legend.width = 0.25,
+     legend.shrink = 0.5,
+     axis.args = list(
+                      las = 2,
+                     
+                      cex.axis = 0.8,
+                      mgp = c(5,0.3,0)),
+     legend.args = list(text = "Patch Priority", 
+                      side = 3, 
+                      font = 2, 
+                      line = 0.5, 
+                      cex = 1))
+```
+
+### `habicon` is still in the early stages of development, but hopefully this was a good teaser of what is to come. Stay tuned!
