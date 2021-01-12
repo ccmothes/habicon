@@ -31,29 +31,29 @@ corr_priority <-
     landscape_corr <-
       landscapemetrics::get_patches(corr_bin, class = 1, return_raster = TRUE)$'1'# ID individual corridors
 
-    #use package tablaraster to ID all patches each corridor connects
+    #use package tabularaster to ID all patches each corridor connects
 
     patch_corr <- stack(landscape_corr, landscape_suit)
 
     pc <-
-      as_tibble(patch_corr) %>% dplyr::filter(cellvalue != 0 | !is.na(cellvalue)) %>%
+      tabularaster::as_tibble(patch_corr) %>% dplyr::filter(cellvalue != 0 | !is.na(cellvalue)) %>%
       dplyr::filter(duplicated(cellindex) |
                duplicated(cellindex, fromLast = TRUE))  %>% #keep both duplicated values (i.e. patch and corridor)
-      tidyr::spread(dimindex, cellvalue) %>% rename(corridor = '1', patch = '2') %>%
-      distinct(corridor, patch)
+      tidyr::spread(dimindex, cellvalue) %>% dplyr::rename(corridor = '1', patch = '2') %>%
+      dplyr::distinct(corridor, patch)
 
 
     ## get patch area and associate with patch ID
     patch_area <-
       landscapemetrics::lsm_p_area(landscape_suit) %>%   #units are hectares
-      dplyr::select(class, value) %>% rename(patch = class, area_ha = value)
+      dplyr::select(class, value) %>% dplyr::rename(patch = class, area_ha = value)
 
     ##quality
     patch_char <-
-      zonal(suit, landscape_suit, fun = 'mean') %>% as_tibble() %>%
-      rename(quality = mean, patch = zone) %>%
-      left_join(patch_area, by = 'patch') %>%
-      mutate(area_sqm = area_ha * 10000)
+      zonal(suit, landscape_suit, fun = 'mean') %>% tabularaster::as_tibble() %>%
+      dplyr::rename(quality = mean, patch = zone) %>%
+      dplyr::left_join(patch_area, by = 'patch') %>%
+      dplyr::mutate(area_sqm = area_ha * 10000)
 
     # corr edge cells for 'width' calculations
     corr_edge <-
@@ -87,10 +87,10 @@ corr_priority <-
 
         #corr i edge cells for distance calc
         corr_edge_i <-
-          as_tibble(corr_edge) %>% dplyr::filter(cellvalue == corr_id) %>% pull(cellindex) %>%
+          tabularaster::as_tibble(corr_edge) %>% dplyr::filter(cellvalue == corr_id) %>% dplyr::pull(cellindex) %>%
           xyFromCell(corr_edge, .)
 
-        #get resistance value, need to invert corr b/c currently conductance values
+        #get resistance value (make sure corr_resist is resistance values, not conductance!)
         R <- corr_resist[i]
 
         #turn pixel into point for distance calculations
@@ -114,7 +114,7 @@ corr_priority <-
 
             #filter patch edge cells to corridor of interest and turn into points
             patch_edge_k <- mask(patch_edge, corr_bin_i) %>%
-              as_tibble() %>% dplyr::filter(cellvalue == pid) %>% pull(cellindex) %>%
+              tabularaster::as_tibble() %>% dplyr::filter(cellvalue == pid) %>% dplyr::pull(cellindex) %>%
               xyFromCell(patch_edge, .)
 
 

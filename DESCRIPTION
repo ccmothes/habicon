@@ -8,14 +8,11 @@ Description: Integrates outputs from habitat suitability and landscape connectiv
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-Depends: R (>= 3.6), raster, dplyr, tabularaster, gdistance
+Depends: R (>= 3.6), raster, gdistance
 Imports:
   raster,
-  tidyverse,
-  landscapemetrics,
-  ResistanceGA,
-  prioritizr,
-  rgeos,
-  viridis,
-  leaflet
+  dplyr,
+  tidyr,
+  tabularaster,
+  landscapemetrics
 RoxygenNote: 6.1.1

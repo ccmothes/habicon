@@ -16,14 +16,14 @@ patch_priority <- function(suit, suit_bin){
   # get patch area and associate with patch ID
   patch_area <-
     landscapemetrics::lsm_p_area(landscape_suit) %>%   #units are hectares
-    dplyr::select(class, value) %>% rename(patch = class, area_ha = value)
+    dplyr::select(class, value) %>% dplyr::rename(patch = class, area_ha = value)
 
   # get patch quality and overall patch score
   patch_char <-
-    zonal(suit, landscape_suit, fun = 'mean') %>% as_tibble() %>%
-    rename(quality = mean, patch = zone) %>%
-    left_join(patch_area, by = 'patch') %>% mutate(area_sqm = area_ha * 10000) %>%
-    mutate(score = area_sqm*quality)
+    zonal(suit, landscape_suit, fun = 'mean') %>% tabularaster::as_tibble() %>%
+    dplyr::rename(quality = mean, patch = zone) %>%
+    dplyr::left_join(patch_area, by = 'patch') %>% dplyr::mutate(area_sqm = area_ha * 10000) %>%
+    dplyr::mutate(score = area_sqm*quality)
 
   # for each patch cell, assign value that corresponds with patch ID
   for (i in 1:ncell(suit_bin)) {
@@ -33,7 +33,7 @@ patch_priority <- function(suit, suit_bin){
     } else {
       patch_id <- landscape_suit[i]
 
-      out[i] <- filter(patch_char, patch == patch_id) %>% pull(score)
+      out[i] <- dplyr::filter(patch_char, patch == patch_id) %>% dplyr::pull(score)
     }
   }
 
