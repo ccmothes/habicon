@@ -8,5 +8,5 @@
 #' @examples
 #'
 rescale_map <- function(x){
-  (x - min(values(x)))/(max(values(x)) - min(values(x)))
+  (x - min(values(x), na.rm = TRUE))/(max(values(x), na.rm = TRUE) - min(values(x), na.rm = TRUE))
 }

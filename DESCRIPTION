@@ -8,10 +8,9 @@ Description: Integrates outputs from habitat suitability and landscape connectiv
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-Depends: R (>= 3.6), raster, gdistance
+Depends: R (>= 3.6), raster, gdistance, dplyr
 Imports:
   raster,
-  dplyr,
   tidyr,
   tabularaster,
   landscapemetrics
