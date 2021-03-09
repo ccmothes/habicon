@@ -52,7 +52,7 @@ corr_priority <-
                                                                                   !is.na(cellvalue)) %>%
       filter(duplicated(cellindex) |
                duplicated(cellindex, fromLast = TRUE))  %>% #keep both duplicated values (i.e. patch and corridor)
-      spread(dimindex, cellvalue) %>% rename(corridor = '1', patch = '2') %>% distinct(corridor, patch)
+      tidyr::spread(dimindex, cellvalue) %>% rename(corridor = '1', patch = '2') %>% distinct(corridor, patch)
 
 
 
@@ -85,7 +85,7 @@ corr_priority <-
       dplyr::ungroup() %>%
       dplyr::filter(!(patch == patch2)) %>%
       dplyr::rename(patch1 = patch) %>%
-      select(patch1, patch2, corridor)
+      dplyr::select(patch1, patch2, corridor)
 
 
     # calculate pairwise distances between patches
