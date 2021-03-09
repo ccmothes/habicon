@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of `habicon` is to calculate habitat patch and corridor priority in terms of their degree of importance to ecological connectivity. It is designed to integrate a habitat suitability data (e.g., outputs of species distribution models) and connectivity/corridor data (e.g., outputs from connectivity models such as CIRCUITSCAPE)
+The goal of `habicon` is to calculate habitat patch and corridor priority in terms of their degree of importance to ecological connectivity. It is designed to integrate habitat suitability data (e.g., outputs of species distribution models) and connectivity/corridor data (e.g., outputs from connectivity models such as CIRCUITSCAPE)
 
 
 You can install the development version of `habicon` on GitHub with:
@@ -51,15 +51,6 @@ plot(corr)
 
 ## Prep Functions
 
-## Standardize input raster values using the `rescale_map` function
-
-As the corridor priority function is currently written, the values of both maps must range from 0-1. I've added a small function that does this to make the conversion easier for users, so let's use it to rescale the connectivity map:
-
-```{r rescale}
-corr_rescale <- rescale_map(corr)
-plot(corr_rescale)
-```
-See that the map still looks the same as before, but now the values range from 0-1.
 
 ## Create binary maps to identify individual habitat patches and corridors using the `bin_map` function
 
@@ -80,15 +71,18 @@ plot(suit_bin)
 For this example, let's stick with the top 20% of suitability and conductance values to make the binary maps that identify the individual habitat patches and corridors.
 
 ```{r}
-corr_bin <- bin_map(corr_rescale, threshold = quantile(values(corr_rescale), 0.8))
+corr_bin <- bin_map(corr, threshold = quantile(values(corr), 0.8))
 plot(corr_bin)
 ```
 
-## Filter out corridor cells that lie within identified habitat patches with `matrix map`
+## Calculate patch priority with the `patch_priority` function
+This function ranks individual patches based on multiple connectivity metrics, including quality-weighted area, weighted betweenness centrality, and dEC (see Saura et al. 2011). Higher values indicate higher importance for all metrics. This function returns a raster layer for each metric, with a connectivity importance value assigned to each patch. It also returns a sumamry table of all metric scores for each patch. For this example I kept the default minimum area (removes patches that are just one pixel) and set the medium dispersal distance (d) to 100. Note that this function takes distances in meters. The minimum area argument works on vectors of two numbers (since working with pixels), so if applying your own minimum area you must enter, for example, min_area = c(10,10) or min_area = 2*res(suit), since 'res' returns a vector of two numbers.  
 
-Since we are only interested in corridors connecting patches and not those that may overlap with patches, your datasets may vary but you will likely need to filter out just the corridors that lie within the intervening matrix. You can create this matrix map with the function `matrix_map`. The resulting matrix map adds a 1 cell buffer around all identified matrix corridor cells, as this is necessary for the corridor priority function to identify all the habitat patches each corridor connects.
-```{r, warning=FALSE}
-corr_matrix <- matrix_map(suit_bin = suit_bin, corr_bin = corr_bin)
+```{r eval = FALSE}
+library(scales)
+patch_prior <- patch_priority(suit = suit, suit_bin = suit_bin)
+plot(patch_prior, col = gradient_n_pal(brewer_pal("seq")(9))(seq(0, 1, length=100)), 
+     main = "Patch Priority")
 ```
 
 
@@ -104,15 +98,7 @@ library(viridis)
 plot(corr_prior, col = inferno(n = 100), main = "Corridor Priority")
 ```
 
-## Calculate patch priority with the `patch_priority` function
-`patch_priority` runs much faster than `corr_priority`. This function essentially ranks each individual patch based on its area and quality (suitability scores). Higher values indicate better patches. I am working on improving this calculation to include other metrics such as the role of each patch in the overall network of patches and corridors (e.g., centrality index).
 
-```{r}
-library(scales)
-patch_prior <- patch_priority(suit = suit, suit_bin = suit_bin)
-plot(patch_prior, col = gradient_n_pal(brewer_pal("seq")(9))(seq(0, 1, length=100)), 
-     main = "Patch Priority")
-```
 
 
 ## Final Product:

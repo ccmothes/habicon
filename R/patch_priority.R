@@ -25,9 +25,10 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
     landscapemetrics::get_patches(suit_bin, class = 1, return_raster = TRUE)$'1'
 
   #remove small patches (default min area is resolution of rasters)
-  ls_remove <- landscapemetrics::lsm_p_area(landscape_suit) %>% filter(value == (min_area[1]*min_area[2])/10000)
+  ls_remove <- landscapemetrics::lsm_p_area(landscape_suit) %>% filter(value <= (min_area[1]*min_area[2])/10000)
 
-  landscape_suit[landscape_suit %in% ls_remove$id] <- NA
+  #landscape_suit[landscape_suit %in% ls_remove$id] <- NA
+  landscape_suit[raster::`%in%`(landscape_suit, ls_remove$id)] <- NA
 
 
   #ID unique corridors

@@ -4,16 +4,15 @@
 \alias{corr_priority}
 \title{Corridor priority calculation}
 \usage{
-corr_priority(suit, suit_bin, corr, corr_bin)
+corr_priority(suit, suit_bin, corr_bin, resist, min_area = res(suit), d)
 }
 \arguments{
 \item{suit}{A RasterLayer object of habitat suitability values, values range from 0-1}
 
 \item{suit_bin}{A RasterLayer object of binary suitable (1) and unsuitable (0) habitat created using \code{\link[habicon]{bin_map}}}
 
-\item{corr}{A RasterLayer object of connectivity values representing conductance to movement, values range from 0-1}
-
-\item{corr_bin}{A RasterLayer object of binary corridor (1) and non-corridor (0) values created using \code{\link[habicon]{bin_map}}}
+\item{corr_bin}{A RasterLayer object of binary corridor (1) and non-corridor (0) values created using \code{\link[habicon]{bin_map}}
+#' @param resist A RasterLayer object where values represent resistance to movement, higher values represent greater resistance}
 }
 \value{
 A RasterLayer object

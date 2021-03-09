@@ -10,8 +10,8 @@ Encoding: UTF-8
 LazyData: true
 Depends: R (>= 3.6), raster, gdistance, dplyr
 Imports:
-  raster,
+  rgeos,
   tidyr,
   tabularaster,
   landscapemetrics
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.1

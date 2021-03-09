@@ -10,7 +10,7 @@
 #' @export
 #'
 #' @examples
-corr_priorityNew <-
+corr_priority <-
   function(suit,
            suit_bin,
            corr_bin,
