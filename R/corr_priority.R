@@ -31,7 +31,9 @@ corr_priority <-
       landscapemetrics::lsm_p_area(landscape_suit) %>% filter(value == (min_area[1] *
                                                                           min_area[2]) / 10000)
 
-    landscape_suit[landscape_suit %in% ls_remove$id] <- NA
+    #landscape_suit[landscape_suit %in% ls_remove$id] <- NA
+    landscape_suit[raster::`%in%`(landscape_suit, ls_remove$id)] <- NA
+
 
     #ID unique corridors
 
