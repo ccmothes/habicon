@@ -78,61 +78,60 @@ plot(corr_bin)
 ## Calculate patch priority with the `patch_priority` function
 This function ranks individual patches based on multiple connectivity metrics, including quality-weighted area, weighted betweenness centrality, and dEC (see Saura et al. 2011). Higher values indicate higher importance for all metrics. This function returns a raster layer for each metric, with a connectivity importance value assigned to each patch. It also returns a sumamry table of all metric scores for each patch. For this example I kept the default minimum area (removes patches that are just one pixel) and set the medium dispersal distance (d) to 100. Note that this function takes distances in meters. The minimum area argument works on vectors of two numbers (since working with pixels), so if applying your own minimum area you must enter, for example, min_area = c(10,10) or min_area = 2*res(suit), since 'res' returns a vector of two numbers.  
 
-```{r eval = FALSE}
+```{r eval = FALSE, message = FALSE}
+
+patch <- patch_priority(suit = suit, suit_bin = suit_bin, corr_bin = corr_bin,
+                        resist = resist, d = 100)
+
+par(mfrow = c(2,2))
+plot(patch$qwa, col = gradient_n_pal(brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length=100)), 
+     legend = FALSE, axes = FALSE,
+     main = "Quality-Weighted Area")
+
+plot(patch$btwn, col = gradient_n_pal(brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length=100)), 
+     legend = FALSE, axes = FALSE,
+     main = "Weighted \nBetweenness Centrality")
+
+plot(patch$qwa, col = gradient_n_pal(brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length=100)), 
+     legend = FALSE, axes = FALSE,
+     main = "dEC (Importance to \nEquivalent Connectivity")
+```
+
+```{r echo = FALSE}
 library(scales)
-patch_prior <- patch_priority(suit = suit, suit_bin = suit_bin)
-plot(patch_prior, col = gradient_n_pal(brewer_pal("seq")(9))(seq(0, 1, length=100)), 
-     main = "Patch Priority")
+par(mfrow = c(2,2))
+plot(patch$qwa, col = gradient_n_pal(brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length=100)), 
+     legend = FALSE, axes = FALSE,
+     main = "Quality-Weighted Area")
+
+plot(patch$btwn, col = gradient_n_pal(brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length=100)), 
+     legend = FALSE, axes = FALSE,
+     main = "Weighted \nBetweenness Centrality")
+
+plot(patch$qwa, col = gradient_n_pal(brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length=100)), 
+     legend = FALSE, axes = FALSE,
+     main = "dEC (Importance to \nEquivalent Connectivity")
+
 ```
 
 
 ## Calculate corridor priority with the `corr_priority` function
 
-Now using our continuous and binary habitat and corridor surfaces, we can calculate corridor priority with the `corr_priority` function.
-NOTE: This function may take a while, as it performs many calculations on each individual cell. I am working on speeding up the run time.
+Now using the same surfaces as in the `patch_priority` function, we can calculate corridor priority with the `corr_priority` function. This function identifies and weights possible paths within identified corridors by mapping all the shortest paths from all possible points of origin between each pair of connected patches and weights each path based on the area, quality, and weighted betweenness centrality with a negative effect of path distance.The final raster output then sums, for each cell, all path values that cross that cell, so cells with more, higher valued paths crossing through them are given higher priority.
+NOTE: This function may take a while depending on raster size and number of connected patches. The rasters in this example consist of 22,500 cells and this function finished in a couple minutes.
 ```{r eval=FALSE}
 corr_prior <- corr_priority(suit = suit, suit_bin = suit_bin, corr = corr_rescale, corr_bin = corr_matrix)
 ```
-```{r message = FALSE}
-library(viridis)
-plot(corr_prior, col = inferno(n = 100), main = "Corridor Priority")
+```{r message = FALSE, echo = FALSE}
+corridor[corridor == 0] <- NA
+
+par(mfrow = c(1,1))
+
+plot(suit_bin, axes = FALSE, legend = FALSE,  main = "Corridor Priority")
+plot(corridor, col = rev(heat.colors(n = 100)), add = TRUE, axes = FALSE,
+     legend = FALSE)
+
 ```
 
 
 
-
-## Final Product:
-```{r echo = FALSE}
-
-plot(corr_prior, col = inferno(n = 100), legend = FALSE, axes = FALSE)
-plot(corr_prior, legend.only = TRUE, col = inferno(100), horizontal = TRUE,
-       smallplot = c(0.1,0.4,0.1,0.12),
-     legend.width = 0.25,
-     legend.shrink = 0.5,
-     axis.args = list(
-                      las = 2,
-                     
-                      cex.axis = 0.8,
-                      mgp = c(5,0.3,0)),
-     legend.args = list(text = "Corridor Priority", 
-                      side = 3, 
-                      font = 2, 
-                      line = 0.5, 
-                      cex = 1))
-plot(patch_prior, col = gradient_n_pal(brewer_pal("seq")(9))(seq(0, 1, length=100)), legend = FALSE, axes = FALSE, add = TRUE)
-plot(patch_prior, legend.only = TRUE, col = gradient_n_pal(brewer_pal("seq")(9))(seq(0, 1, length=100)), horizontal = TRUE, smallplot = c(0.5,0.8,0.1,0.12),
-     legend.width = 0.25,
-     legend.shrink = 0.5,
-     axis.args = list(
-                      las = 2,
-                     
-                      cex.axis = 0.8,
-                      mgp = c(5,0.3,0)),
-     legend.args = list(text = "Patch Priority", 
-                      side = 3, 
-                      font = 2, 
-                      line = 0.5, 
-                      cex = 1))
-```
-
-### `habicon` is still in the early stages of development, but hopefully this was a good teaser of what is to come. Stay tuned!
