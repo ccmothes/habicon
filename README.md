@@ -9,15 +9,13 @@
 
 The goal of `habicon` is to calculate habitat patch and corridor
 priority in terms of their degree of importance to ecological
-connectivity. It is designed to integrate a habitat suitability data
+connectivity. It is designed to integrate habitat suitability data
 (e.g., outputs of species distribution models) and connectivity/corridor
-data (e.g., outputs from connectivity models such as CIRCUITSCAPE)
+data (e.g., outputs from connectivity models such as Circuitscape)
 
 You can install the development version of `habicon` on GitHub with:
 
-``` r
-devtools::install_github("ccmothes/habicon")
-```
+    devtools::install_github("ccmothes/habicon")
 
 ## Example
 
@@ -43,8 +41,8 @@ plot(suit)
 
 <img src="man/figures/README-suit-1.png" width="100%" />
 
-And second **corr** where values represent conductance to movement and
-range from 0-10 (10 being high conductance/ease of movement):
+And second **corr** where values represent “current” (e.g. Circuitscape
+outputs) or similar, where larger values reflect more movement:
 
 ``` r
 plot(corr)
@@ -53,21 +51,6 @@ plot(corr)
 <img src="man/figures/README-corr-1.png" width="100%" />
 
 ## Prep Functions
-
-## Standardize input raster values using the `rescale_map` function
-
-As the corridor priority function is currently written, the values of
-both maps must range from 0-1. I’ve added a small function that does
-this to make the conversion easier for users, so let’s use it to rescale
-the connectivity map:
-
-``` r
-corr_rescale <- rescale_map(corr)
-plot(corr_rescale)
-```
-
-<img src="man/figures/README-rescale-1.png" width="100%" /> See that the
-map still looks the same as before, but now the values range from 0-1.
 
 ## Create binary maps to identify individual habitat patches and corridors using the `bin_map` function
 
@@ -99,70 +82,53 @@ conductance values to make the binary maps that identify the individual
 habitat patches and corridors.
 
 ``` r
-corr_bin <- bin_map(corr_rescale, threshold = quantile(values(corr_rescale), 0.8))
+corr_bin <- bin_map(corr, threshold = quantile(values(corr), 0.8))
 plot(corr_bin)
 ```
 
 <img src="man/figures/README-unnamed-chunk-3-1.png" width="100%" />
 
-## Filter out corridor cells that lie within identified habitat patches with `matrix map`
+## Calculate patch priority with the `patch_priority` function
 
-Since we are only interested in corridors connecting patches and not
-those that may overlap with patches, your datasets may vary but you will
-likely need to filter out just the corridors that lie within the
-intervening matrix. You can create this matrix map with the function
-`matrix_map`. The resulting matrix map adds a 1 cell buffer around all
-identified matrix corridor cells, as this is necessary for the corridor
-priority function to identify all the habitat patches each corridor
-connects.
+This function ranks individual patches based on multiple connectivity
+metrics, including quality-weighted area, weighted betweenness
+centrality, and dEC (see Saura et al. 2011). Higher values indicate
+higher importance for all metrics. This function returns a raster layer
+for each metric, with a connectivity importance value assigned to each
+patch. It also returns a sumamry table of all metric scores for each
+patch. For this example I kept the default minimum area (removes patches
+that are just one pixel) and set the medium dispersal distance (d) to
+100. Note that this function takes distances in meters. The minimum area
+argument works on vectors of two numbers (since working with pixels), so
+if applying your own minimum area you must enter, for example, min\_area
+= c(10,10) or min\_area = 2\*res(suit), since ‘res’ returns a vector of
+two numbers.
 
 ``` r
-corr_matrix <- matrix_map(suit_bin = suit_bin, corr_bin = corr_bin)
+
+patch <- patch_priority(suit = suit, suit_bin = suit_bin, corr_bin = corr_bin,
+                        resist = resist, d = 100)
 ```
+
+<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-5-2.png" width="100%" /><img src="man/figures/README-unnamed-chunk-5-3.png" width="100%" />
 
 ## Calculate corridor priority with the `corr_priority` function
 
-Now using our continuous and binary habitat and corridor surfaces, we
-can calculate corridor priority with the `corr_priority` function. NOTE:
-This function may take a while, as it performs many calculations on each
-individual cell. I am working on speeding up the run time.
+Now using the same surfaces as in the `patch_priority` function, we can
+calculate corridor priority with the `corr_priority` function. This
+function identifies and weights possible paths within identified
+corridors by mapping all the shortest paths from all possible points of
+origin between each pair of connected patches and weights each path
+based on the area, quality, and weighted betweenness centrality with a
+negative effect of path distance.The final raster output then sums, for
+each cell, all path values that cross that cell, so cells with more,
+higher valued paths crossing through them are given higher priority.
+NOTE: This function may take a while depending on raster size and number
+of connected patches. The rasters in this example consist of 22,500
+cells and this function finished in a couple minutes.
 
 ``` r
 corr_prior <- corr_priority(suit = suit, suit_bin = suit_bin, corr = corr_rescale, corr_bin = corr_matrix)
 ```
 
-``` r
-library(viridis)
-plot(corr_prior, col = inferno(n = 100), main = "Corridor Priority")
-```
-
-<img src="man/figures/README-unnamed-chunk-6-1.png" width="100%" />
-
-## Calculate patch priority with the `patch_priority` function
-
-`patch_priority` runs much faster than `corr_priority`. This function
-essentially ranks each individual patch based on its area and quality
-(suitability scores). Higher values indicate better patches. I am
-working on improving this calculation to include other metrics such as
-the role of each patch in the overall network of patches and corridors
-(e.g., centrality index).
-
-``` r
-library(scales)
-#> 
-#> Attaching package: 'scales'
-#> The following object is masked from 'package:viridis':
-#> 
-#>     viridis_pal
-patch_prior <- patch_priority(suit = suit, suit_bin = suit_bin)
-plot(patch_prior, col = gradient_n_pal(brewer_pal("seq")(9))(seq(0, 1, length=100)), 
-     main = "Patch Priority")
-```
-
 <img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
-
-## Final Product:
-
-<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
-
-### `habicon` is still in the early stages of development, but hopefully this was a good teaser of what is to come. Stay tuned\!

@@ -18,12 +18,13 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of `habicon` is to calculate habitat patch and corridor priority in terms of their degree of importance to ecological connectivity. It is designed to integrate habitat suitability data (e.g., outputs of species distribution models) and connectivity/corridor data (e.g., outputs from connectivity models such as CIRCUITSCAPE)
+The goal of `habicon` is to calculate habitat patch and corridor priority in terms of their degree of importance to ecological connectivity. It is designed to integrate habitat suitability data (e.g., outputs of species distribution models) and connectivity/corridor data (e.g., outputs from connectivity models such as Circuitscape)
 
 
 You can install the development version of `habicon` on GitHub with:
 
-``` r
+
+``` 
 devtools::install_github("ccmothes/habicon")
 ```
 
@@ -44,7 +45,7 @@ These include **suit** where values represent habitat suitability and range from
 plot(suit)
 ```
  
-And second **corr** where values represent conductance to movement and range from 0-10 (10 being high conductance/ease of movement):
+And second **corr** where values represent "current" (e.g. Circuitscape outputs) or similar, where larger values reflect more movement:
 ```{r corr}
 plot(corr)
 ```
@@ -83,23 +84,12 @@ This function ranks individual patches based on multiple connectivity metrics, i
 patch <- patch_priority(suit = suit, suit_bin = suit_bin, corr_bin = corr_bin,
                         resist = resist, d = 100)
 
-par(mfrow = c(2,2))
-plot(patch$qwa, col = gradient_n_pal(brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length=100)), 
-     legend = FALSE, axes = FALSE,
-     main = "Quality-Weighted Area")
-
-plot(patch$btwn, col = gradient_n_pal(brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length=100)), 
-     legend = FALSE, axes = FALSE,
-     main = "Weighted \nBetweenness Centrality")
-
-plot(patch$qwa, col = gradient_n_pal(brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length=100)), 
-     legend = FALSE, axes = FALSE,
-     main = "dEC (Importance to \nEquivalent Connectivity")
 ```
 
 ```{r echo = FALSE}
 library(scales)
-par(mfrow = c(2,2))
+
+
 plot(patch$qwa, col = gradient_n_pal(brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length=100)), 
      legend = FALSE, axes = FALSE,
      main = "Quality-Weighted Area")
