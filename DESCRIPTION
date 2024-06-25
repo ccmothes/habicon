@@ -2,16 +2,16 @@ Package: habicon
 Type: Package
 Title: Habitat Connectivity Prioritization Tool
 Version: 0.1.0
-Author: Caitlin Mothes
+Authors@R: person("Caitlin", "Mothes", email = "ccmothes@gmail.com",
+  role = c("aut", "cre"))
 Maintainer: Caitin Mothes <ccmothes@gmail.com>
 Description: Integrates outputs from habitat suitability and landscape connectivity models to calculate landscape priority.
+URL: hhttps://github.com/ccmothes/habicon
+BugReports: hhttps://github.com/ccmothes/habicon/issues
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-Depends: R (>= 3.6), raster, gdistance, dplyr
-Imports:
-  rgeos,
-  tidyr,
-  tabularaster,
-  landscapemetrics
-RoxygenNote: 7.1.1
+Depends:
+    R (>= 3.6)
+Imports:terra, gdistance, dplyr, tidyr, tabularaster, landscapemetrics
+RoxygenNote: 7.3.1
