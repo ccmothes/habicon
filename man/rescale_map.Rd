@@ -15,6 +15,3 @@ A RasterLayer object
 \description{
 Rescale raster values to 0-1
 }
-\examples{
-
-}

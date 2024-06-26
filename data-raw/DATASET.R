@@ -1,10 +1,16 @@
 ## code to prepare `DATASET` dataset goes here
-library(raster)
+library(terra)
 
-corr <- raster('data-raw/current_surface.tif')
-suit <- raster('data-raw/suitability_surface.tif')
-resist <- raster("data-raw/resistance_surface.tif")
-patch <- load("data-raw/patch_priorEx.RData")
-corridor <- raster("data-raw/corridor.tif")
+corr <- rast('data-raw/current_surface.tif')
+suit <- rast('data-raw/suitability_surface.tif')
+resist <- rast("data-raw/resistance_surface.tif")
+corridor <- rast("data-raw/corridor.tif")
+load("data-raw/patch_priorEx.RData")
+
+# change rasterlayers to terra
+patch$qwa <- rast(patch$qwa)
+patch$btwn <- rast(patch$btwn)
+patch$dECA <- rast(patch$dECA)
+
 
 usethis::use_data(corr, suit, resist, patch, corridor, overwrite = TRUE)
