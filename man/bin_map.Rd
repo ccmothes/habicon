@@ -7,13 +7,13 @@
 bin_map(x, threshold)
 }
 \arguments{
-\item{x}{A RasterLayer object}
+\item{x}{A SpatRaster object}
 
-\item{threshold}{}
+\item{threshold}{A value (or range of values) to use as suitability thresholds}
 }
 \value{
-A RasterLayer object
+A SpatRaster object
 }
 \description{
-Create a binary map
+This function creates a binary map of suitable/unsuitable habitat based on a user-specified threshold value
 }
