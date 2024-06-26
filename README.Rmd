@@ -60,20 +60,20 @@ Other inputs needed for the priority calculations are binary maps, which can be 
 Users can test and view binary maps over a range of values:
 ```{r binmap}
 suit_bin <- bin_map(suit, threshold = c(0.4, 0.6, 0.8))
-plot(suit_bin)
+plot(suit_bin, col = c("white", "darkgreen"))
 ```
 
 Often species distribution models calculate potential threshold values that users can choose to use. Or, say you want to identify patches of the highest habitat suitability, say the top 20% of suitability values:
 ```{r}
 suit_bin <- bin_map(suit, threshold = quantile(values(suit), 0.8))
-plot(suit_bin)
+plot(suit_bin, col = c("white", "darkgreen"))
 ```
 
 For this example, let's stick with the top 20% of suitability and conductance values to make the binary maps that identify the individual habitat patches and corridors.
 
 ```{r}
 corr_bin <- bin_map(corr, threshold = quantile(values(corr), 0.8))
-plot(corr_bin)
+plot(corr_bin, col = c("white", "darkgreen"))
 ```
 
 ## Calculate patch priority with the `patch_priority` function
