@@ -4,7 +4,6 @@
 # **habicon**
 
 <!-- badges: start -->
-
 <!-- badges: end -->
 
 The goal of `habicon` is to calculate habitat patch and corridor
@@ -15,7 +14,9 @@ data (e.g., outputs from connectivity models such as Circuitscape)
 
 You can install the development version of `habicon` on GitHub with:
 
-    devtools::install_github("ccmothes/habicon")
+``` r
+devtools::install_github("ccmothes/habicon")
+```
 
 ## Example
 
@@ -23,20 +24,22 @@ This is a basic example using simulated habitat suitability and
 connectivity maps demonstrating the functions available so far.
 
 **NOTE: This package is still in the early stages of development and
-more functions with increased user flexibility are coming soon\!**
+more functions with increased user flexibility are coming soon!**
 
 ``` r
 library(habicon)
 ```
 
 First let’s visualize the simulated raster maps included as example
-data.
+data. These are `SpatRaster` objects that first need to be unpacked
+using the `unwrap()` helper function from `terra`.
 
 These include **suit** where values represent habitat suitability and
 range from 0-1 (1 being high suitability):
 
 ``` r
-plot(suit)
+suit <- terra::unwrap(suit)
+terra::plot(suit)
 ```
 
 <img src="man/figures/README-suit-1.png" width="100%" />
@@ -45,7 +48,8 @@ And second **corr** where values represent “current” (e.g. Circuitscape
 outputs) or similar, where larger values reflect more movement:
 
 ``` r
-plot(corr)
+corr <- terra::unwrap(corr)
+terra::plot(corr)
 ```
 
 <img src="man/figures/README-corr-1.png" width="100%" />
@@ -61,7 +65,7 @@ Users can test and view binary maps over a range of values:
 
 ``` r
 suit_bin <- bin_map(suit, threshold = c(0.4, 0.6, 0.8))
-plot(suit_bin)
+terra::plot(suit_bin)
 ```
 
 <img src="man/figures/README-binmap-1.png" width="100%" />
@@ -71,22 +75,22 @@ that users can choose to use. Or, say you want to identify patches of
 the highest habitat suitability, say the top 20% of suitability values:
 
 ``` r
-suit_bin <- bin_map(suit, threshold = quantile(values(suit), 0.8))
-plot(suit_bin)
+suit_bin <- bin_map(suit, threshold = quantile(terra::values(suit), 0.8))
+terra::plot(suit_bin)
 ```
 
-<img src="man/figures/README-unnamed-chunk-2-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" />
 
 For this example, let’s stick with the top 20% of suitability and
 conductance values to make the binary maps that identify the individual
 habitat patches and corridors.
 
 ``` r
-corr_bin <- bin_map(corr, threshold = quantile(values(corr), 0.8))
-plot(corr_bin)
+corr_bin <- bin_map(corr, threshold = quantile(terra::values(corr), 0.8))
+terra::plot(corr_bin)
 ```
 
-<img src="man/figures/README-unnamed-chunk-3-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
 
 ## Calculate patch priority with the `patch_priority` function
 
@@ -100,8 +104,8 @@ patch. For this example I kept the default minimum area (removes patches
 that are just one pixel) and set the medium dispersal distance (d) to
 100. Note that this function takes distances in meters. The minimum area
 argument works on vectors of two numbers (since working with pixels), so
-if applying your own minimum area you must enter, for example, min\_area
-= c(10,10) or min\_area = 2\*res(suit), since ‘res’ returns a vector of
+if applying your own minimum area you must enter, for example, min_area
+= c(10,10) or min_area = 2\*res(suit), since ‘res’ returns a vector of
 two numbers.
 
 ``` r
@@ -110,7 +114,23 @@ patch <- patch_priority(suit = suit, suit_bin = suit_bin, corr_bin = corr_bin,
                         resist = resist, d = 100)
 ```
 
-<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-5-2.png" width="100%" /><img src="man/figures/README-unnamed-chunk-5-3.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
+
+``` r
+terra::plot(patch$btwn, col = gradient_n_pal(brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length=100)), 
+     legend = FALSE, axes = FALSE,
+     main = "Weighted \nBetweenness Centrality")
+```
+
+<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
+
+``` r
+terra::plot(patch$qwa, col = gradient_n_pal(brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length=100)), 
+     legend = FALSE, axes = FALSE,
+     main = "dEC (Importance to \nEquivalent Connectivity")
+```
+
+<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" />
 
 ## Calculate corridor priority with the `corr_priority` function
 
@@ -131,4 +151,4 @@ cells and this function finished in a couple minutes.
 corr_prior <- corr_priority(suit = suit, suit_bin = suit_bin, corr = corr_rescale, corr_bin = corr_matrix)
 ```
 
-<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-11-1.png" width="100%" />
