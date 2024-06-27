@@ -105,17 +105,36 @@ patch$qwa <- terra::unwrap(patch$qwa)
 patch$btwn <- terra::unwrap(patch$btwn)
 patch$dECA <- terra::unwrap(patch$dECA)
 
-terra::plot(patch$qwa, col = gradient_n_pal(brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length=100)), 
-     legend = FALSE, axes = FALSE,
-     main = "Quality-Weighted Area")
 
-terra::plot(patch$btwn, col = gradient_n_pal(brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length=100)), 
-     legend = FALSE, axes = FALSE,
-     main = "Weighted \nBetweenness Centrality")
+terra::plot(
+  patch$qwa,
+  col = gradient_n_pal(brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length =
+                                                                       100)),
+  legend = FALSE,
+  axes = FALSE,
+  main = "Quality-Weighted Area"
+)
 
-terra::plot(patch$qwa, col = gradient_n_pal(brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length=100)), 
-     legend = FALSE, axes = FALSE,
-     main = "dEC (Importance to \nEquivalent Connectivity")
+terra::plot(
+  patch$btwn,
+  col = gradient_n_pal(brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length =
+                                                                       100)),
+  legend = FALSE,
+  axes = FALSE,
+  main = "Weighted \nBetweenness Centrality",
+  mar = c(3.1, 3.1, 2.4, 2.4)
+)
+
+terra::plot(
+  patch$qwa,
+  col = gradient_n_pal(brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length =
+                                                                       100)),
+  legend = FALSE,
+  axes = FALSE,
+  main = "dEC (Importance to \nEquivalent Connectivity",
+    mar = c(3.1, 3.1, 2.4, 2.4)
+
+)
 
 ```
 

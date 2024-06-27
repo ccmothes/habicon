@@ -114,23 +114,7 @@ patch <- patch_priority(suit = suit, suit_bin = suit_bin, corr_bin = corr_bin,
                         resist = resist, d = 100)
 ```
 
-<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
-
-``` r
-terra::plot(patch$btwn, col = gradient_n_pal(brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length=100)), 
-     legend = FALSE, axes = FALSE,
-     main = "Weighted \nBetweenness Centrality")
-```
-
-<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
-
-``` r
-terra::plot(patch$qwa, col = gradient_n_pal(brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length=100)), 
-     legend = FALSE, axes = FALSE,
-     main = "dEC (Importance to \nEquivalent Connectivity")
-```
-
-<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-7-2.png" width="100%" /><img src="man/figures/README-unnamed-chunk-7-3.png" width="100%" />
 
 ## Calculate corridor priority with the `corr_priority` function
 
@@ -151,4 +135,4 @@ cells and this function finished in a couple minutes.
 corr_prior <- corr_priority(suit = suit, suit_bin = suit_bin, corr = corr_rescale, corr_bin = corr_matrix)
 ```
 
-<img src="man/figures/README-unnamed-chunk-11-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" />
