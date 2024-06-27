@@ -13,7 +13,7 @@ bin_map <- function(x, threshold) {
   output <- vector("list", length = length(threshold))
   for (i in 1:length(threshold)) {
 
-      output[[i]] <- classify(x,
+      output[[i]] <- terra::classify(x,
                                 matrix(
                                   c(-Inf, threshold[[i]], 0,
                                     threshold[[i]], Inf, 1),
@@ -23,7 +23,7 @@ bin_map <- function(x, threshold) {
       names(output[[i]]) <- paste("threshold", threshold[[i]])
   }
   if (length(output) > 1) {
-    rast(output)
+    terra::rast(output)
   } else {
     return(output[[i]])
   }
