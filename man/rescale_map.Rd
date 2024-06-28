@@ -7,10 +7,10 @@
 rescale_map(x)
 }
 \arguments{
-\item{x}{A RasterLayer object to be rescaled}
+\item{x}{The SpatRaster object to be rescaled}
 }
 \value{
-A RasterLayer object
+A SpatRaster object
 }
 \description{
 Rescale raster values to 0-1

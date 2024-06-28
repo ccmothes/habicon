@@ -7,12 +7,12 @@
 source_map(x, value = 1)
 }
 \arguments{
-\item{x}{A RasterLayer object}
+\item{x}{A SpatRaster object}
 
 \item{value}{The cell value to create source surface from, default is 1}
 }
 \value{
-A RasterLayer object
+A SpatRaster object
 }
 \description{
 Create a source map, where all values other than focal value become NA

@@ -9,11 +9,13 @@ bin_map(x, threshold)
 \arguments{
 \item{x}{A SpatRaster object}
 
-\item{threshold}{A value (or range of values) to use as suitability thresholds}
+\item{threshold}{A value (or range of values) to use as suitability
+thresholds}
 }
 \value{
 A SpatRaster object
 }
 \description{
-This function creates a binary map of suitable/unsuitable habitat based on a user-specified threshold value
+This function creates a binary map of suitable/unsuitable habitat based on a
+user-specified threshold value
 }

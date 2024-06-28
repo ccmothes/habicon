@@ -2,18 +2,22 @@
 % Please edit documentation in R/matrix_map.R
 \name{matrix_map}
 \alias{matrix_map}
-\title{Filter just the matrix of the corridor map. This removes corridor cells that are within identified habitat patches}
+\title{Filter just the matrix of the corridor map. This removes corridor cells that
+are within identified habitat patches}
 \usage{
 matrix_map(suit_bin, corr_bin)
 }
 \arguments{
-\item{suit_bin}{A RasterLayer object of binary suitable (1) and unsuitable (0) habitat created using \code{\link[habicon]{bin_map}}}
+\item{suit_bin}{A SpatRaster object of binary suitable (1) and unsuitable
+(0) habitat created using \code{\link{bin_map}}}
 
-\item{corr_bin}{A RasterLayer object of binary corridor (1) and non-corridor (0) values created using \code{\link[habicon]{bin_map}}}
+\item{corr_bin}{A SpatRaster object of binary corridor (1) and non-corridor
+(0) values created using \code{\link{bin_map}}}
 }
 \value{
-A RasterLayer object
+A SpatRaster object
 }
 \description{
-Filter just the matrix of the corridor map. This removes corridor cells that are within identified habitat patches
+Filter just the matrix of the corridor map. This removes corridor cells that
+are within identified habitat patches
 }

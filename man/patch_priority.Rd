@@ -4,19 +4,34 @@
 \alias{patch_priority}
 \title{Calculate habitat patch priority}
 \usage{
-patch_priority(suit, suit_bin, corr_bin, resist, min_area = res(suit), d)
+patch_priority(
+  suit,
+  suit_bin,
+  corr_bin,
+  resist,
+  min_area = res(suit)[1] * res(suit)[2],
+  d
+)
 }
 \arguments{
-\item{suit}{A RasterLayer object of habitat suitability values, values range from 0-1}
+\item{suit}{A SpatRaster object of continuous habitat suitability values, where values range
+from 0-1. See \code{\link{rescale_map}} for rescaling values to 0-1.}
 
-\item{suit_bin}{A RasterLayer object of binary suitable (1) and unsuitable (0) habitat created using \code{\link[habicon]{bin_map}}}
+\item{suit_bin}{A SpatRaster object of binary suitable (1) and unsuitable
+(0) habitat created using \code{\link{bin_map}}}
 
-\item{corr_bin}{A RasterLayer object of binary corridor (1) and non-corridor (0) values created using \code{\link[habicon]{bin_map}}}
+\item{corr_bin}{A SpatRaster object of binary corridor (1) and non-corridor
+(0) values created using \code{\link{bin_map}}}
 
-\item{resist}{A RasterLayer object where values represent resistance to movement, higher values represent greater resistance}
+\item{resist}{A SpatRaster object where values represent resistance to
+ movement, higher values represent greater resistance.
+@param min_area The minimum area to be considered a habitat patch. Value in square meters. Default
+  is to remove any patches that are only one pixel in size.
+@param d Minimum dispersal distance (in meters).}
 }
 \value{
-A RasterLayer object
+A list object with one SpatRaster for each of the three connectivity
+  metrics and a summary table.
 }
 \description{
 Calculate habitat patch priority
