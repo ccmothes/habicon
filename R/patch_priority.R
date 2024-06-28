@@ -17,7 +17,6 @@
 #'
 #' @export
 patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit)[1] * res(suit)[2], d) {
-  # first check if single value for min_area,
 
   out <- list()
   # make empty rasters to fill results with
@@ -26,54 +25,55 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
   out$dECA <- setValues(suit, NA)
 
 
-
-  # id patches
+  # ID patches
   landscape_suit <-
     landscapemetrics::get_patches(suit_bin, class = 1, return_raster = TRUE)[[1]][[1]]
 
-  # remove patches smaller than minimum area
-  ls_remove <- landscapemetrics::lsm_p_area(landscape_suit) %>%
-    #filter(value <= min_area / 10000)
-    filter(value >= 0.0003)
+  ## remove patches smaller than minimum area
 
-  # landscape_suit[landscape_suit %in% ls_remove$id] <- NA
-  if(nrow(ls_remove != 0)) {
-    landscape_suit[terra::`%in%`(landscape_suit, ls_remove$class)] <- NA
+  ### save area metrics for later
+  patch_area <- landscapemetrics::lsm_p_area(landscape_suit) %>%
+    rename(patch = class, area_ha = value)
+
+  patch_remove <- patch_area %>%
+    filter(area_ha < min_area / 10000)
+
+  ## landscape_suit[landscape_suit %in% ls_remove$id] <- NA
+  if(nrow(patch_remove != 0)) {
+    landscape_suit[terra::`%in%`(landscape_suit, ls_remove$patch)] <- NA
   }
+
+  ## assign layer name
+  names(landscape_suit) <- "patch"
 
 
   # ID unique corridors
 
-  # filter corridor map to matrix
+  ## filter corridor map to matrix
   corr_matrix <- matrix_map(suit_bin, corr_bin)
 
   landscape_corr <-
-    landscapemetrics::get_patches(corr_matrix, class = 1, return_raster = TRUE)$"1"
+    landscapemetrics::get_patches(corr_matrix, class = 1, return_raster = TRUE)[[1]][[1]]
+
+  ## assign layer name
+  names(landscape_corr) <- "corridor"
 
 
   # ID connections
+
   pc <-
-    tabularaster::as_tibble(stack(landscape_corr, landscape_suit)) %>%
-    dplyr::filter(cellvalue != 0 | !is.na(cellvalue)) %>%
-    dplyr::filter(duplicated(cellindex) |
-      duplicated(cellindex, fromLast = TRUE)) %>% # keep both duplicated values (i.e. patch and corridor)
-    tidyr::spread(dimindex, cellvalue) %>%
-    dplyr::rename(corridor = "1", patch = "2") %>%
-    dplyr::distinct(corridor, patch)
+    tabularaster::as_tibble(c(landscape_corr, landscape_suit)) %>%
+    tidyr::drop_na() %>%
+    distinct()
 
-
-  ## get patch area and quality associate with patch ID
-  patch_area <-
-    landscapemetrics::lsm_p_area(landscape_suit) %>% # units are hectares?
-    dplyr::select(class, value) %>% rename(patch = class, area_ha = value)
-
+  ## create df of patch characteristics
   patch_char <-
-    zonal(suit, landscape_suit, fun = "mean") %>%
-    as_tibble() %>%
-    rename(quality = mean, patch = zone) %>%
-    left_join(patch_area, by = "patch") %>%
-    mutate(area_sqkm = area_ha * 0.01) %>%
-    mutate(quality_area = area_sqkm * quality)
+    terra::zonal(suit, landscape_suit, fun = "mean") %>%
+    dplyr::rename(quality = names(suit)) %>%
+    dplyr::inner_join(patch_area, by = "patch") %>%
+    dplyr::mutate(area_sqkm = area_ha * 0.01,
+           quality_area = area_sqkm * quality) %>%
+    dplyr::select(-c(layer, level, id, metric))
 
 
   # Create edges object of all patch connections
@@ -85,7 +85,7 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
     dplyr::ungroup() %>%
     dplyr::filter(!(patch == patch2)) %>%
     dplyr::rename(patch1 = patch) %>%
-    select(patch1, patch2, corridor)
+    dplyr::select(patch1, patch2, corridor)
 
 
   # calculate pairwise distances between patches
