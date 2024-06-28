@@ -2,9 +2,9 @@
 #' are within identified habitat patches
 #'
 #' @param suit_bin A SpatRaster object of binary suitable (1) and unsuitable
-#'   (0) habitat created using \code{\link[habicon]{bin_map}}
+#'   (0) habitat created using \code{\link{bin_map}}
 #' @param corr_bin A SpatRaster object of binary corridor (1) and non-corridor
-#'   (0) values created using \code{\link[habicon]{bin_map}}
+#'   (0) values created using \code{\link{bin_map}}
 #'
 #' @return A SpatRaster object
 #' @export
