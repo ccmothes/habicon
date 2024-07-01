@@ -20,14 +20,13 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
 
   out <- list()
   # make empty rasters to fill results with
-  out$qwa <- setValues(suit, NA)
-  out$btwn <- setValues(suit, NA)
-  out$dECA <- setValues(suit, NA)
+  out$qwa <- terra::setValues(suit, NA)
+  out$btwn <- terra::setValues(suit, NA)
+  out$dECA <- terra::setValues(suit, NA)
 
 
   # ID patches
-  landscape_suit <-
-    landscapemetrics::get_patches(suit_bin, class = 1, return_raster = TRUE)[[1]][[1]]
+  landscape_suit <- landscapemetrics::get_patches(suit_bin, class = 1, return_raster = TRUE)[[1]][[1]]
 
   ## remove patches smaller than minimum area
 
@@ -38,7 +37,6 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
   patch_remove <- patch_area %>%
     filter(area_ha < min_area / 10000)
 
-  ## landscape_suit[landscape_suit %in% ls_remove$id] <- NA
   if(nrow(patch_remove != 0)) {
     landscape_suit[terra::`%in%`(landscape_suit, ls_remove$patch)] <- NA
   }
@@ -49,7 +47,7 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
 
   # ID unique corridors
 
-  ## filter corridor map to matrix
+  ## filter corridor map to matrix (i.e., remove corridor cells overlapping with patches)
   corr_matrix <- matrix_map(suit_bin, corr_bin)
 
   landscape_corr <-
@@ -89,41 +87,41 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
 
 
   # calculate pairwise distances between patches
+
   ## filter to just patches connected by corridors to speed up computation
-  rpoly <- calc(landscape_suit, function(x) {
+  rpoly <- terra::app(landscape_suit, function(x) {
     x[!x %in% pc$patch] <- NA
     return(x)
   })
-  rpoly <- rasterToPolygons(rpoly, dissolve = T)
 
-  # rpoly <- subset(rpoly, rpoly$layer %in% pc$patch)
+  ## convert to polygons and calculate distances
+  rpoly <- terra::as.polygons(rpoly)
 
-  dis <- rgeos::gDistance(rpoly, byid = TRUE) # these rows and headers are row ID not patch ID
-  # change row and column names to their layer (patch) ID
+  dis <- terra::distance(rpoly, pairs = TRUE) %>%
+    as_tibble() %>%
+  ### change ID to their layer (patch) ID
+    mutate(from = rpoly$lyr.1[from],
+           to = rpoly$lyr.1[to])
 
-  rownames(dis) <- rpoly$layer
-  colnames(dis) <- rpoly$layer
+  ## add distances to edges df
+  edges <- edges %>%
+    left_join(dis, by = c("patch1" = "from", "patch2" = "to"))
 
-  edges[, "distance"] <- NA
-  # now add distances to edges df
-  for (i in 1:nrow(edges)) {
-    edges$distance[i] <- dis[as.character(edges$patch1[i]), as.character(edges$patch2[i])]
-  }
-
+  ## get all unique patches (nodes)
   nodes <- unique(c(edges$patch1, edges$patch2))
 
-  # create graph object
 
-  patchNetwork <- graph_from_data_frame(d = edges, vertices = nodes, directed = F)
+  # create graph object
+  patch_network <- igraph::graph_from_data_frame(d = edges, vertices = nodes, directed = F)
 
 
   # weighted betweenness
-  V(patchNetwork)$betweenness <- betweenness(patchNetwork, directed = FALSE, weights = E(patchNetwork)$distance)
+  igraph::V(patch_network)$betweenness <- igraph::betweenness(patch_network, directed = FALSE, weights = igraph::E(patch_network)$distance)
 
   centrality <-
-    data.frame(
-      patch = as.numeric(names(V(patchNetwork))),
-      betweenness = as.numeric(V(patchNetwork)$betweenness)
+    tibble(
+      patch = as.numeric(names(igraph::V(patch_network))),
+      betweenness = as.numeric(igraph::V(patch_network)$betweenness)
     )
 
   patch_char <-
@@ -135,23 +133,22 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
   # ECA for entire network
 
 
-
-  ## for all patch connections (edges), sum( AiQiAjQj*exp(dij*(log(0.5)/D50)) )
-  ## lets say D50 is 5km (convert area to km then)
+  ## for all patch connections (edges), sum( AiQiAjQj*exp(dij*(log(0.5)/D50)) ) where D50 is given dispersal distance
 
   patch_edge <-
     landscapemetrics::get_boundaries(landscape_suit,
       consider_boundary = TRUE,
       return_raster = TRUE
     )[[1]] %>%
-    reclassify(matrix(c(-Inf, 0, NA), ncol = 3)) %>%
-    mask(landscape_suit, .) # associate edge cell values with their patch ID
+    terra::classify(matrix(c(-Inf, 0, NA), ncol = 3)) %>%
+    terra::mask(landscape_suit, .) # associate edge cell values with their patch ID
 
 
   tran <-
     transition(1 / mask(resist, corr_matrix), function(x) { # convert resist to conductance and mask to just corridors
       mean(x)
     }, 8)
+
   tran <- geoCorrection(tran, type = "c")
 
   theta <- log(0.5) / d # meters
@@ -214,6 +211,7 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
     Qj <- as.numeric(patch_char[patch_char$patch == p2, 2])
     edges$ECA[i] <- Ai * Qi * Aj * Qj * exp(dij * theta)
   }
+
   ECA <- sqrt(sum(edges$ECA))
 
   # now calculate ECA for each patch and add to patch char
