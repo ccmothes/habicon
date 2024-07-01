@@ -13,5 +13,5 @@ Encoding: UTF-8
 LazyData: true
 Depends:
     R (>= 3.6)
-Imports: terra, gdistance, dplyr, tidyr, tabularaster, landscapemetrics
+Imports: terra, gdistance, dplyr, tidyr, tabularaster, landscapemetrics, igraph
 RoxygenNote: 7.3.1
