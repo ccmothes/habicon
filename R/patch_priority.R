@@ -17,7 +17,6 @@
 #'
 #' @export
 patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit)[1] * res(suit)[2], d) {
-
   out <- list()
   # make empty rasters to fill results with
   out$qwa <- terra::setValues(suit, NA)
@@ -37,7 +36,7 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
   patch_remove <- patch_area %>%
     filter(area_ha < min_area / 10000)
 
-  if(nrow(patch_remove != 0)) {
+  if (nrow(patch_remove != 0)) {
     landscape_suit[terra::`%in%`(landscape_suit, ls_remove$patch)] <- NA
   }
 
@@ -69,8 +68,10 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
     terra::zonal(suit, landscape_suit, fun = "mean") %>%
     dplyr::rename(quality = names(suit)) %>%
     dplyr::inner_join(patch_area, by = "patch") %>%
-    dplyr::mutate(area_sqkm = area_ha * 0.01,
-           quality_area = area_sqkm * quality) %>%
+    dplyr::mutate(
+      area_sqkm = area_ha * 0.01,
+      quality_area = area_sqkm * quality
+    ) %>%
     dplyr::select(-c(layer, level, id, metric))
 
 
@@ -99,9 +100,11 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
 
   dis <- terra::distance(rpoly, pairs = TRUE) %>%
     as_tibble() %>%
-  ### change ID to their layer (patch) ID
-    mutate(from = rpoly$lyr.1[from],
-           to = rpoly$lyr.1[to])
+    ### change ID to their layer (patch) ID
+    mutate(
+      from = rpoly$lyr.1[from],
+      to = rpoly$lyr.1[to]
+    )
 
   ## add distances to edges df
   edges <- edges %>%
@@ -159,7 +162,7 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
   # }))
 
   ## keep full raster, masking created errors
-  conductance_matrix <- 1/resist
+  conductance_matrix <- 1 / resist
 
   ### for now, in order to use gdistance must convert terra to raster object
   tran <-
@@ -173,7 +176,7 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
   edges[, "ECA"] <- NA
 
   # set theta value based on dispersal distance
-  #theta <- log(0.5) / d # meters
+  # theta <- log(0.5) / d # meters
 
 
   for (i in 1:nrow(edges)) {
@@ -183,37 +186,40 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
     c <- as.numeric(edges[i, 3]) # corridor connecting patches
 
     patch_i <-
-      patch_edge%>%
+      patch_edge %>%
       dplyr::filter(patch == p1) %>%
-      dplyr::select(x,y)
+      dplyr::select(x, y)
 
     patch_j <-
-      patch_edge%>%
+      patch_edge %>%
       dplyr::filter(patch == p2) %>%
-      dplyr::select(x,y)
+      dplyr::select(x, y)
 
 
     min_path <- vector(length = nrow(patch_i))
 
     for (j in (1:nrow(patch_i))) {
       min_path[j] <-
-        tryCatch({
-          gdistance::shortestPath(
-            tran,
-            origin = as.matrix(patch_i[j, ]),
-            goal = as.matrix(patch_j),
-            output = "SpatialLines"
-          ) %>%
-            # convert to sf
-            sf::st_as_sf() %>%
-            # add length variable
-            mutate(length = st_length(.)) %>%
-            pull(length) %>%
-            min(., na.rm = TRUE)
-        }, error = function(msg) {
-          # message(paste("Error for path number:", x, "\nInvalid geometry"))
-          return(NA)
-        })
+        tryCatch(
+          {
+            gdistance::shortestPath(
+              tran,
+              origin = as.matrix(patch_i[j, ]),
+              goal = as.matrix(patch_j),
+              output = "SpatialLines"
+            ) %>%
+              # convert to sf
+              sf::st_as_sf() %>%
+              # add length variable
+              mutate(length = st_length(.)) %>%
+              pull(length) %>%
+              min(., na.rm = TRUE)
+          },
+          error = function(msg) {
+            # message(paste("Error for path number:", x, "\nInvalid geometry"))
+            return(NA)
+          }
+        )
     }
 
     dij <- min(min_path, na.rm = TRUE) # meters?
@@ -254,7 +260,7 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
   names(out$btwn) <- "Weighted_betweenness_centrality"
 
 
-   # dECA
+  # dECA
   out$dECA <- terra::subst(landscape_suit, from = patch_char$patch, to = patch_char$dECA)
 
   names(out$dECA) <- "dECA"
@@ -265,5 +271,4 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
 
 
   return(out)
-
 }
