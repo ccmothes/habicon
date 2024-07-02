@@ -59,7 +59,7 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
   # ID connections
 
   pc <-
-    tabularaster::as_tibble(c(landscape_corr, landscape_suit)) %>%
+    terra::as.data.frame(c(landscape_corr, landscape_suit)) %>%
     tidyr::drop_na() %>%
     distinct()
 
