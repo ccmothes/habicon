@@ -26,7 +26,7 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
 
 
   # ID patches
-  landscape_suit <- landscapemetrics::get_patches(suit_bin, class = 1, return_raster = TRUE)[[1]][[1]]
+  landscape_suit <- landscapemetrics::get_patches(suit_bin, class = 1, directions = 4, return_raster = TRUE)[[1]][[1]]
 
   ## remove patches smaller than minimum area
 
@@ -51,7 +51,7 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
   corr_matrix <- matrix_map(suit_bin, corr_bin)
 
   landscape_corr <-
-    landscapemetrics::get_patches(corr_matrix, class = 1, return_raster = TRUE)[[1]][[1]]
+    landscapemetrics::get_patches(corr_matrix, class = 1, directions = 4, return_raster = TRUE)[[1]][[1]]
 
   ## assign layer name
   names(landscape_corr) <- "corridor"
@@ -105,7 +105,8 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
 
   ## add distances to edges df
   edges <- edges %>%
-    left_join(dis, by = c("patch1" = "from", "patch2" = "to"))
+    left_join(dis, by = c("patch1" = "from", "patch2" = "to")) %>%
+    rename(distance = value)
 
   ## get all unique patches (nodes)
   nodes <- unique(c(edges$patch1, edges$patch2))
@@ -132,84 +133,95 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
 
   # ECA for entire network
 
-
   ## for all patch connections (edges), sum( AiQiAjQj*exp(dij*(log(0.5)/D50)) ) where D50 is given dispersal distance
 
+  ### identify patch edges
   patch_edge <-
     landscapemetrics::get_boundaries(landscape_suit,
       consider_boundary = TRUE,
       return_raster = TRUE
     )[[1]] %>%
     terra::classify(matrix(c(-Inf, 0, NA), ncol = 3)) %>%
-    terra::mask(landscape_suit, .) # associate edge cell values with their patch ID
+    # associate edge cell values with their patch ID
+    terra::mask(landscape_suit, .) %>%
+    # filter only edge cells connected to a corridor
+    mask(., terra::app(landscape_corr, function(x) {
+      x[!x %in% edges$corridor] <- NA
+      return(x)
+    })) %>%
+    terra::as.data.frame(cells = TRUE, xy = TRUE)
 
+  ### create conductance matrix for shortest path calc and mask to connecting corriors
 
+  # conductance_matrix <-  1/resist %>% mask(., terra::app(landscape_corr, function(x) {
+  #   x[!x %in% edges$corridor] <- NA
+  #   return(x)
+  # }))
+
+  ## keep full raster, masking created errors
+  conductance_matrix <- 1/resist
+
+  ### for now, in order to use gdistance must convert terra to raster object
   tran <-
-    transition(1 / mask(resist, corr_matrix), function(x) { # convert resist to conductance and mask to just corridors
+    gdistance::transition(raster::raster(conductance_matrix), function(x) { # convert resist to conductance and mask to just corridors
       mean(x)
     }, 8)
 
-  tran <- geoCorrection(tran, type = "c")
+  tran <- gdistance::geoCorrection(tran, type = "c")
 
-  theta <- log(0.5) / d # meters
-
+  # set up new variable to fill
   edges[, "ECA"] <- NA
+
+  # set theta value based on dispersal distance
+  #theta <- log(0.5) / d # meters
+
+
   for (i in 1:nrow(edges)) {
     # get edge points for patch i and patch j
     p1 <- as.numeric(edges[i, 1])
     p2 <- as.numeric(edges[i, 2])
     c <- as.numeric(edges[i, 3]) # corridor connecting patches
+
     patch_i <-
-      mask(patch_edge, calc(landscape_corr, function(x) {
-        x[x != c] <- NA
-        return(x)
-      })) %>%
-      tabularaster::as_tibble() %>%
-      dplyr::filter(cellvalue == p1) %>%
-      dplyr::pull(cellindex) %>%
-      xyFromCell(patch_edge, .)
+      patch_edge%>%
+      dplyr::filter(patch == p1) %>%
+      dplyr::select(x,y)
 
     patch_j <-
-      mask(patch_edge, calc(landscape_corr, function(x) {
-        x[x != c] <- NA
-        return(x)
-      })) %>%
-      tabularaster::as_tibble() %>%
-      dplyr::filter(cellvalue == p2) %>%
-      dplyr::pull(cellindex) %>%
-      xyFromCell(patch_edge, .)
+      patch_edge%>%
+      dplyr::filter(patch == p2) %>%
+      dplyr::select(x,y)
 
-    spatdf <- vector("list", length = nrow(patch_i))
+
+    min_path <- vector(length = nrow(patch_i))
 
     for (j in (1:nrow(patch_i))) {
-      paths <- shortestPath(tran,
-        origin = patch_i[j, ],
-        goal = patch_j,
-        output = "SpatialLines"
-      )
-
-      spatdf[[j]] <- data.frame(distance = sapply(1:length(paths), function(x) {
-        tryCatch(
-          {
-            rgeos::gLength(paths[x, ])
-          },
-          error = function(msg) {
-            # message(paste("Error for path number:", x, "\nInvalid geometry"))
-            return(NA)
-          }
-        )
-      }))
+      min_path[j] <-
+        tryCatch({
+          gdistance::shortestPath(
+            tran,
+            origin = as.matrix(patch_i[j, ]),
+            goal = as.matrix(patch_j),
+            output = "SpatialLines"
+          ) %>%
+            # convert to sf
+            sf::st_as_sf() %>%
+            # add length variable
+            mutate(length = st_length(.)) %>%
+            pull(length) %>%
+            min(., na.rm = TRUE)
+        }, error = function(msg) {
+          # message(paste("Error for path number:", x, "\nInvalid geometry"))
+          return(NA)
+        })
     }
 
-    spatdf <- do.call("rbind", spatdf)
-
-
-    dij <- min(spatdf$distance, na.rm = TRUE) # meters
-    Ai <- as.numeric(patch_char[patch_char$patch == p1, 4])
-    Qi <- as.numeric(patch_char[patch_char$patch == p1, 2])
-    Aj <- as.numeric(patch_char[patch_char$patch == p2, 4])
-    Qj <- as.numeric(patch_char[patch_char$patch == p2, 2])
-    edges$ECA[i] <- Ai * Qi * Aj * Qj * exp(dij * theta)
+    dij <- min(min_path, na.rm = TRUE) # meters?
+    Ai <- as.numeric(patch_char[patch_char$patch == p1, "area_sqkm"])
+    Qi <- as.numeric(patch_char[patch_char$patch == p1, "quality"])
+    Aj <- as.numeric(patch_char[patch_char$patch == p2, "area_sqkm"])
+    Qj <- as.numeric(patch_char[patch_char$patch == p2, "quality"])
+    edges$ECA[i] <- Ai * Qi * Aj * Qj * exp(dij * (log(0.5) / d))
   }
 
   ECA <- sqrt(sum(edges$ECA))
@@ -226,52 +238,32 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
   }
 
 
-  # for each patch cell, assign value that corresponds with patch ID
+  # CREATE FINAL OUTPTUS
 
   # Quality weighted area
-  for (i in 1:ncell(landscape_suit)) {
-    if (is.na(landscape_suit[i]) | landscape_suit[i] == 0) {
-      # keep non-patch cells as NA
-      out$qwa[i] <- NA
-    } else {
-      patch_id <- landscape_suit[i]
 
-      out$qwa[i] <- dplyr::filter(patch_char, patch == patch_id) %>% dplyr::pull(quality_area)
-    }
-  }
+  out$qwa <- terra::subst(landscape_suit, from = patch_char$patch, to = patch_char$quality_area)
+
   names(out$qwa) <- "Quality_weighted_area"
 
 
-
   # Weighted betweenness centrality
-  for (i in 1:ncell(landscape_suit)) {
-    if (is.na(landscape_suit[i]) | landscape_suit[i] == 0) {
-      # keep non-patch cells as NA
-      out$btwn[i] <- NA
-    } else {
-      patch_id <- landscape_suit[i]
 
-      out$btwn[i] <- dplyr::filter(patch_char, patch == patch_id) %>% dplyr::pull(betweenness)
-    }
-  }
+  out$btwn <- terra::subst(landscape_suit, from = patch_char$patch, to = patch_char$betweenness)
+
   names(out$btwn) <- "Weighted_betweenness_centrality"
 
-  # dECA
-  for (i in 1:ncell(landscape_suit)) {
-    if (is.na(landscape_suit[i]) | landscape_suit[i] == 0) {
-      # keep non-patch cells as NA
-      out$dECA[i] <- NA
-    } else {
-      patch_id <- landscape_suit[i]
 
-      out$dECA[i] <- dplyr::filter(patch_char, patch == patch_id) %>% dplyr::pull(dECA)
-    }
-  }
+   # dECA
+  out$dECA <- terra::subst(landscape_suit, from = patch_char$patch, to = patch_char$dECA)
+
   names(out$dECA) <- "dECA"
 
 
+  # summary table
   out$summary_table <- patch_char
 
 
   return(out)
+
 }
