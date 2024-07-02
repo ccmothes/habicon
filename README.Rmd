@@ -108,8 +108,8 @@ patch$dECA <- terra::unwrap(patch$dECA)
 
 terra::plot(
   patch$qwa,
-  col = gradient_n_pal(brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length =
-                                                                       100)),
+  col = scales::gradient_n_pal(scales::brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length =
+                                                                                       100)),
   legend = FALSE,
   axes = FALSE,
   main = "Quality-Weighted Area"
@@ -117,7 +117,7 @@ terra::plot(
 
 terra::plot(
   patch$btwn,
-  col = gradient_n_pal(brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length =
+  col = scales::gradient_n_pal(scales::brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length =
                                                                        100)),
   legend = FALSE,
   axes = FALSE,
@@ -127,7 +127,7 @@ terra::plot(
 
 terra::plot(
   patch$qwa,
-  col = gradient_n_pal(brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length =
+  col = scales::gradient_n_pal(scales::brewer_pal("seq", palette = "Greens")(9))(seq(0, 1, length =
                                                                        100)),
   legend = FALSE,
   axes = FALSE,
