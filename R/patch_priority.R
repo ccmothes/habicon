@@ -8,15 +8,15 @@
 #'   (0) values created using \code{\link{bin_map}}
 #' @param resist A SpatRaster object where values represent resistance to
 #'   movement, higher values represent greater resistance.
-#'  @param min_area The minimum area to be considered a habitat patch. Value in square meters. Default
+#' @param min_area The minimum area to be considered a habitat patch. Value in square meters. Default
 #'    is to remove any patches that are only one pixel in size.
-#'  @param d Minimum dispersal distance (in meters).
+#' @param d Minimum dispersal distance (in meters).
 #'
 #' @return A list object with one SpatRaster for each of the three connectivity
 #'   metrics and a summary table.
 #'
 #' @export
-patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit)[1] * res(suit)[2], d) {
+patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = terra::res(suit)[1] * terra::res(suit)[2], d) {
   out <- list()
   # make empty rasters to fill results with
   out$qwa <- terra::setValues(suit, NA)
@@ -31,10 +31,10 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
 
   ### save area metrics for later
   patch_area <- landscapemetrics::lsm_p_area(landscape_suit) %>%
-    rename(patch = class, area_ha = value)
+    dplyr::rename(patch = class, area_ha = value)
 
   patch_remove <- patch_area %>%
-    filter(area_ha < min_area / 10000)
+    dplyr::filter(area_ha < min_area / 10000)
 
   if (nrow(patch_remove != 0)) {
     landscape_suit[terra::`%in%`(landscape_suit, ls_remove$patch)] <- NA
@@ -61,7 +61,7 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
   pc <-
     terra::as.data.frame(c(landscape_corr, landscape_suit)) %>%
     tidyr::drop_na() %>%
-    distinct()
+    dplyr::distinct()
 
   ## create df of patch characteristics
   patch_char <-
@@ -99,17 +99,17 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
   rpoly <- terra::as.polygons(rpoly)
 
   dis <- terra::distance(rpoly, pairs = TRUE) %>%
-    as_tibble() %>%
+    tidyr::as_tibble() %>%
     ### change ID to their layer (patch) ID
-    mutate(
+    dplyr::mutate(
       from = rpoly$lyr.1[from],
       to = rpoly$lyr.1[to]
     )
 
   ## add distances to edges df
   edges <- edges %>%
-    left_join(dis, by = c("patch1" = "from", "patch2" = "to")) %>%
-    rename(distance = value)
+    dplyr::left_join(dis, by = c("patch1" = "from", "patch2" = "to")) %>%
+    dplyr::rename(distance = value)
 
   ## get all unique patches (nodes)
   nodes <- unique(c(edges$patch1, edges$patch2))
@@ -123,13 +123,13 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
   igraph::V(patch_network)$betweenness <- igraph::betweenness(patch_network, directed = FALSE, weights = igraph::E(patch_network)$distance)
 
   centrality <-
-    tibble(
+    tidyr::tibble(
       patch = as.numeric(names(igraph::V(patch_network))),
       betweenness = as.numeric(igraph::V(patch_network)$betweenness)
     )
 
   patch_char <-
-    left_join(patch_char, centrality, by = "patch")
+    dplyr::left_join(patch_char, centrality, by = "patch")
 
 
 
@@ -148,7 +148,7 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
     # associate edge cell values with their patch ID
     terra::mask(landscape_suit, .) %>%
     # filter only edge cells connected to a corridor
-    mask(., terra::app(landscape_corr, function(x) {
+    terra::mask(., terra::app(landscape_corr, function(x) {
       x[!x %in% edges$corridor] <- NA
       return(x)
     })) %>%
@@ -237,7 +237,7 @@ patch_priority <- function(suit, suit_bin, corr_bin, resist, min_area = res(suit
 
   patch_char[, "dECA"] <- NA
   for (i in 1:length(nodes)) {
-    ECAi <- filter(edges, patch1 != nodes[i] & patch2 != nodes[i]) %>% pull(ECA)
+    ECAi <- dplyr::filter(edges, patch1 != nodes[i] & patch2 != nodes[i]) %>% dplyr::pull(ECA)
     ECAi <- sqrt(sum(ECAi))
     dECA <- (ECA - ECAi) / ECA
     patch_char$dECA[patch_char$patch == nodes[i]] <- dECA
