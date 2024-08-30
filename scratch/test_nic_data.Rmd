@@ -33,11 +33,11 @@ Calculate bin maps
 
 ```{r}
 # using top 20% of suitability/connectivity values
-suit_bin <-  bin_map(rw_suit, threshold = quantile(terra::values(suit), 0.8))
+suit_bin <-  bin_map(rw_suit, threshold = quantile(terra::values(rw_suit, na.rm = TRUE), 0.8))
 #suit_bin <- bin_map(rw_suit, threshold = 0.75)
 
 # 0.2 because resistance values
-corr_bin <- bin_map(rw_conn, threshold = quantile(terra::values(suit), 0.2))
+corr_bin <- bin_map(rw_conn, threshold = quantile(terra::values(rw_conn, na.rm = TRUE), 0.2))
 
 ```
 
@@ -59,11 +59,18 @@ Overlap when threshold is conservative, most cores included when using the top 2
 ## Patch Priority
 
 ```{r}
+start <- Sys.time()
+
 patch <- patch_priority(
   suit = rw_suit,
   suit_bin = suit_bin,
   corr_bin = corr_bin,
   resist = rw_conn,
-  d = 422
+  d = 422,
+  progress = TRUE
 )
+
+end <- Sys.time()
+
+end - start
 ```
