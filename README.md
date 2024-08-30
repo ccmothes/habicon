@@ -109,9 +109,8 @@ if applying your own minimum area you must enter, for example, min_area
 two numbers.
 
 ``` r
-
 patch <- patch_priority(suit = suit, suit_bin = suit_bin, corr_bin = corr_bin,
-                        resist = resist, d = 100)
+                        resist = terra::unwrap(resist), d = 100)
 ```
 
 <img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-7-2.png" width="100%" /><img src="man/figures/README-unnamed-chunk-7-3.png" width="100%" />
