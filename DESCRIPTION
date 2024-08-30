@@ -13,5 +13,5 @@ Encoding: UTF-8
 LazyData: true
 Depends:
     R (>= 3.6)
-Imports: terra, gdistance, dplyr, tidyr, landscapemetrics, igraph, sf
-RoxygenNote: 7.3.1
+Imports: terra, gdistance, dplyr, tidyr, landscapemetrics, igraph, sf, cli, magrittr
+RoxygenNote: 7.3.2
