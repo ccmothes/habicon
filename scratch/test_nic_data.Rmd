@@ -57,6 +57,7 @@ qtm(suit_bin) +
 Overlap when threshold is conservative, most cores included when using the top 20% threshold.
 
 ## Patch Priority
+Took 3.35 hours on Mac (30m res)
 
 ```{r}
 start <- Sys.time()
@@ -74,3 +75,10 @@ end <- Sys.time()
 
 end - start
 ```
+
+
+Save output
+```{r}
+save(patch_priority, file = "scratch/test_data/nic_patch_priority.RData")
+```
+
