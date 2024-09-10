@@ -143,7 +143,14 @@ terra::plot(
 Now using the same surfaces as in the `patch_priority` function, we can calculate corridor priority with the `corr_priority` function. This function identifies and weights possible paths within identified corridors by mapping all the shortest paths from all possible points of origin between each pair of connected patches and weights each path based on the area, quality, and weighted betweenness centrality with a negative effect of path distance.The final raster output then sums, for each cell, all path values that cross that cell, so cells with more, higher valued paths crossing through them are given higher priority. NOTE: This function may take a while depending on raster size and number of connected patches. The rasters in this example consist of 22,500 cells and this function finished in a couple minutes.
 
 ```{r eval=FALSE}
-corr_prior <- corr_priority(suit = suit, suit_bin = suit_bin, corr = corr_rescale, corr_bin = corr_matrix)
+corr_prior <- corr_priority(
+  suit = suit,
+  suit_bin = suit_bin,
+  resist = terra::unwrap(resist),
+  corr_bin = corr_bin,
+  d = 100,
+  progress = TRUE
+)
 ```
 
 ```{r message = FALSE, echo = FALSE}
@@ -154,7 +161,7 @@ corridor[corridor == 0] <- NA
 par(mfrow = c(1,1))
 
 terra::plot(suit_bin, axes = FALSE, legend = FALSE,  main = "Corridor Priority")
-terra::plot(corridor, col = rev(heat.colors(n = 100)), add = TRUE, axes = FALSE,
+terra::plot(corr_prior, col = rev(heat.colors(n = 100)), add = TRUE, axes = FALSE,
      legend = FALSE)
 
 ```
