@@ -76,6 +76,31 @@ end <- Sys.time()
 end - start
 ```
 
+Save output
+
+```{r}
+save(patch_priority, file = "scratch/test_data/nic_patch_priority.RData")
+```
+
+## Corridor Priority
+
+```{r}
+start <- Sys.time()
+
+corridor <- corr_priority(
+  suit = rw_suit,
+  suit_bin = suit_bin,
+  corr_bin = corr_bin,
+  resist = rw_conn,
+  d = 422,
+  progress = TRUE
+)
+
+end <- Sys.time()
+
+end - start
+```
+
 
 Save output
 ```{r}
