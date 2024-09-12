@@ -36,8 +36,8 @@ Calculate bin maps
 suit_bin <-  bin_map(rw_suit, threshold = quantile(terra::values(rw_suit, na.rm = TRUE), 0.8))
 #suit_bin <- bin_map(rw_suit, threshold = 0.75)
 
-# 0.2 because resistance values
-corr_bin <- bin_map(rw_conn, threshold = quantile(terra::values(rw_conn, na.rm = TRUE), 0.2))
+# Being a little more liberal on what is included for corridor calculations
+corr_bin <- bin_map(1/(rw_conn+1), threshold = quantile(terra::values(1/(rw_conn+1), na.rm = TRUE), 0.4))
 
 ```
 
@@ -57,6 +57,7 @@ qtm(suit_bin) +
 Overlap when threshold is conservative, most cores included when using the top 20% threshold.
 
 ## Patch Priority
+
 Took 3.35 hours on Mac (30m res)
 
 ```{r}
@@ -105,9 +106,27 @@ end - start
 # 2.16 hours
 ```
 
-
 Save output
+
 ```{r}
 terra::writeRaster(corridor, file = "scratch/test_data/nic_corridor_priority.tif")
 ```
 
+## Visualize results
+
+```{r}
+patches <- terra::rast("scratch/test_data/nic_patch_priority_rasters.tif")
+
+corridors <- terra::rast("scratch/test_data/nic_corridor_priority.tif")
+
+tmap_mode("view")
+
+tm_shape(patches$qwa) +
+  tm_raster(title = "Quality Weighted Area") +
+  tm_shape(patches$btwn) +
+  tm_raster(title = "Betweenness Centrality") +
+  tm_shape(patches$dECA) +
+  tm_raster(title = "Equivalent Connected Area") +
+  tm_shape(corridors) +
+  tm_raster(title = "Corridor Priority", style = "cont")
+```
