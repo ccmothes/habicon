@@ -301,13 +301,19 @@ corr_priority <-
 
 
       rastPaths[[i]] <-
-        terra::rasterize(
-          x = sldf,
-          y = out,
-          #y = test,
-          field = "EC",
-          fun = sum
-        )
+        # in case sldf does not return any paths
+        if (inherits(sldf, "tbl_df")) {
+          out
+        } else {
+          terra::rasterize(
+            x = sldf,
+            y = out,
+            #y = test,
+            field = "EC",
+            fun = sum
+          )
+
+        }
 
       # Update the progress bar
       if (progress) {
