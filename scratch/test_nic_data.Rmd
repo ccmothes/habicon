@@ -74,12 +74,15 @@ patch <- patch_priority(
 end <- Sys.time()
 
 end - start
+# 1.34 hours
 ```
 
 Save output
 
 ```{r}
-save(patch_priority, file = "scratch/test_data/nic_patch_priority.RData")
+terra::writeRaster(terra::rast(patch[1:3]), file = "scratch/test_data/nic_patch_priority_rasters.tif")
+
+write.csv(patch[4], file = "scratch/test_data/nic_patch_priority_table.csv")
 ```
 
 ## Corridor Priority
@@ -99,11 +102,12 @@ corridor <- corr_priority(
 end <- Sys.time()
 
 end - start
+# 2.16 hours
 ```
 
 
 Save output
 ```{r}
-save(patch_priority, file = "scratch/test_data/nic_patch_priority.RData")
+terra::writeRaster(corridor, file = "scratch/test_data/nic_corridor_priority.tif")
 ```
 
