@@ -108,15 +108,15 @@ end - start
 Save output
 
 ```{r}
-terra::writeRaster(corridor, file = "scratch/test_data/nic_corridor_priority.tif")
+terra::writeRaster(corridor, file = "scratch/test_data/nic_corridor_priority_UPDATE.tif")
 ```
 
 ## Visualize results
 
 ```{r}
-patches <- terra::rast("scratch/test_data/nic_patch_priority_rasters.tif")
+patches <- terra::rast("scratch/test_data/nic_patch_priority_rasters_UPDATE.tif")
 
-corridors <- terra::rast("scratch/test_data/nic_corridor_priority.tif")
+corridors <- terra::rast("scratch/test_data/nic_corridor_priority_UPDATE.tif")
 
 tmap_mode("view")
 
